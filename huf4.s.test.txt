@@ -1,0 +1,1051 @@
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ gcc huf4.c -o huf4
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ ./huf4
+f: 0
+c: 100
+d: 101
+a: 1100
+b: 1101
+e: 111
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ cat huf4.c
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_TREE_HT 100
+
+struct MinHeapNode {
+    char data;
+    unsigned freq;
+    struct MinHeapNode *left, *right;
+};
+
+struct MinHeap {
+    unsigned size;
+    unsigned capacity;
+    struct MinHeapNode** array;
+};
+
+struct MinHeapNode* newNode(char data, unsigned freq) {
+    struct MinHeapNode* temp = (struct MinHeapNode*) malloc(sizeof(struct MinHeapNode));
+    temp->left = temp->right = NULL;
+    temp->data = data;
+    temp->freq = freq;
+    return temp;
+}
+
+struct MinHeap* createMinHeap(unsigned capacity) {
+    struct MinHeap* minHeap = (struct MinHeap*) malloc(sizeof(struct MinHeap));
+    minHeap->size = 0;
+    minHeap->capacity = capacity;
+    minHeap->array = (struct MinHeapNode**)malloc(minHeap->capacity * sizeof(struct MinHeapNode*));
+    return minHeap;
+}
+
+void swapMinHeapNode(struct MinHeapNode** a, struct MinHeapNode** b) {
+    struct MinHeapNode* t = *a;
+    *a = *b;
+    *b = t;
+}
+
+void minHeapify(struct MinHeap* minHeap, int idx) {
+    int smallest = idx;
+    int left = 2 * idx + 1;
+    int right = 2 * idx + 2;
+
+    if (left < minHeap->size && minHeap->array[left]->freq < minHeap->array[smallest]->freq) {
+        smallest = left;
+    }
+
+    if (right < minHeap->size && minHeap->array[right]->freq < minHeap->array[smallest]->freq) {
+        smallest = right;
+    }
+
+    if (smallest != idx) {
+        swapMinHeapNode(&minHeap->array[smallest], &minHeap->array[idx]);
+        minHeapify(minHeap, smallest);
+    }
+}
+
+int isSizeOne(struct MinHeap* minHeap) {
+    return (minHeap->size == 1);
+}
+
+struct MinHeapNode* extractMin(struct MinHeap* minHeap) {
+    struct MinHeapNode* temp = minHeap->array[0];
+    minHeap->array[0] = minHeap->array[minHeap->size - 1];
+    --minHeap->size;
+    minHeapify(minHeap, 0);
+    return temp;
+}
+
+void insertMinHeap(struct MinHeap* minHeap, struct MinHeapNode* minHeapNode) {
+    ++minHeap->size;
+    int i = minHeap->size - 1;
+    while (i && minHeapNode->freq < minHeap->array[(i - 1)/2]->freq) {
+        minHeap->array[i] = minHeap->array[(i - 1)/2];
+        i = (i - 1)/2;
+    }
+    minHeap->array[i] = minHeapNode;
+}
+
+void buildMinHeap(struct MinHeap* minHeap) {
+    int n = minHeap->size - 1;
+    int i;
+    for (i = (n - 1) / 2; i >= 0; --i) {
+        minHeapify(minHeap, i);
+    }
+}
+
+void printArr(int arr[], int n) {
+    for (int i = 0; i < n; ++i) {
+        printf("%d", arr[i]);
+    }
+    printf("\n");
+}
+
+int isLeaf(struct MinHeapNode* root) {
+    return !(root->left) && !(root->right);
+}
+
+struct MinHeap* createAndBuildMinHeap(char data[], int freq[], int size) {
+    struct MinHeap* minHeap = createMinHeap(size);
+    for (int i = 0; i < size; ++i) {
+        minHeap->array[i] = newNode(data[i], freq[i]);
+    }
+    minHeap->size = size;
+    buildMinHeap(minHeap);
+    return minHeap;
+}
+
+struct MinHeapNode* buildHuffmanTree(char data[], int freq[], int size) {
+    struct MinHeapNode *left, *right, *top;
+    struct MinHeap* minHeap = createAndBuildMinHeap(data, freq, size);
+    while (!isSizeOne(minHeap)) {
+        left = extractMin(minHeap);
+        right = extractMin(minHeap);
+
+        top = newNode('$', left->freq + right->freq);
+        top->left = left;
+        top->right = right;
+
+        insertMinHeap(minHeap, top);
+    }
+    return extractMin(minHeap);
+}
+
+void printCodes(struct MinHeapNode* root, int arr[], int top) {
+    if (root->left) {
+        arr[top] = 0;
+        printCodes(root->left, arr, top + 1);
+    }
+    if (root->right) {
+        arr[top] = 1;
+        printCodes(root->right, arr, top + 1);
+    }
+    if (isLeaf(root)) {
+        printf("%c: ", root->data);
+        printArr(arr, top);
+    }
+}
+
+void HuffmanCodes(char data[], int freq[], int size) {
+    struct MinHeapNode* root = buildHuffmanTree(data, freq, size);
+    int arr[MAX_TREE_HT], top = 0;
+    printCodes(root, arr, top);
+}
+
+int main() {
+    char arr[] = {'a', 'b', 'c', 'd', 'e', 'f'};
+    int freq[] = {5, 9, 12, 13, 16, 45};
+    int size = sizeof(arr)/sizeof(arr[0]);
+    HuffmanCodes(arr, freq, size);
+    return 0;
+}
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ sloccount huf4.c
+Have a non-directory at the top, so creating directory top_dir
+Adding /home/ian/huf4.c to top_dir
+Categorizing files.
+Finding a working MD5 command....
+Found a working MD5 command.
+Computing results.
+
+
+SLOC	Directory	SLOC-by-Language (Sorted)
+130     top_dir         ansic=130
+
+
+Totals grouped by language (dominant language first):
+ansic:          130 (100.00%)
+
+
+
+
+Total Physical Source Lines of Code (SLOC)                = 130
+Development Effort Estimate, Person-Years (Person-Months) = 0.02 (0.28)
+ (Basic COCOMO model, Person-Months = 2.4 * (KSLOC**1.05))
+Schedule Estimate, Years (Months)                         = 0.13 (1.54)
+ (Basic COCOMO model, Months = 2.5 * (person-months**0.38))
+Estimated Average Number of Developers (Effort/Schedule)  = 0.18
+Total Estimated Cost to Develop                           = $ 3,172
+ (average salary = $56,286/year, overhead = 2.40).
+SLOCCount, Copyright (C) 2001-2004 David A. Wheeler
+SLOCCount is Open Source Software/Free Software, licensed under the GNU GPL.
+SLOCCount comes with ABSOLUTELY NO WARRANTY, and you are welcome to
+redistribute it under certain conditions as specified by the GNU GPL license;
+see the documentation for details.
+Please credit this data as "generated using David A. Wheeler's 'SLOCCount'."
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ gcc huf4.c -S
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ gcc huff4.s -o huff4asm
+Assembler messages:
+Error: can't open huff4.s for reading: No such file or directory
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ gcc huf4.s -o huf4asm
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ ./huf4asm
+f: 0
+c: 100
+d: 101
+a: 1100
+b: 1101
+e: 111
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ cat huf4.s
+	.file	"huf4.c"
+	.text
+	.globl	newNode
+	.type	newNode, @function
+newNode:
+.LFB6:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movl	%edi, %eax
+	movl	%esi, -24(%rbp)
+	movb	%al, -20(%rbp)
+	movl	$24, %edi
+	call	malloc@PLT
+	movq	%rax, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movq	$0, 16(%rax)
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rdx
+	movq	-8(%rbp), %rax
+	movq	%rdx, 8(%rax)
+	movq	-8(%rbp), %rax
+	movzbl	-20(%rbp), %edx
+	movb	%dl, (%rax)
+	movq	-8(%rbp), %rax
+	movl	-24(%rbp), %edx
+	movl	%edx, 4(%rax)
+	movq	-8(%rbp), %rax
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE6:
+	.size	newNode, .-newNode
+	.globl	createMinHeap
+	.type	createMinHeap, @function
+createMinHeap:
+.LFB7:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movl	%edi, -20(%rbp)
+	movl	$16, %edi
+	call	malloc@PLT
+	movq	%rax, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movl	$0, (%rax)
+	movq	-8(%rbp), %rax
+	movl	-20(%rbp), %edx
+	movl	%edx, 4(%rax)
+	movq	-8(%rbp), %rax
+	movl	4(%rax), %eax
+	movl	%eax, %eax
+	salq	$3, %rax
+	movq	%rax, %rdi
+	call	malloc@PLT
+	movq	%rax, %rdx
+	movq	-8(%rbp), %rax
+	movq	%rdx, 8(%rax)
+	movq	-8(%rbp), %rax
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE7:
+	.size	createMinHeap, .-createMinHeap
+	.globl	swapMinHeapNode
+	.type	swapMinHeapNode, @function
+swapMinHeapNode:
+.LFB8:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -24(%rbp)
+	movq	%rsi, -32(%rbp)
+	movq	-24(%rbp), %rax
+	movq	(%rax), %rax
+	movq	%rax, -8(%rbp)
+	movq	-32(%rbp), %rax
+	movq	(%rax), %rdx
+	movq	-24(%rbp), %rax
+	movq	%rdx, (%rax)
+	movq	-32(%rbp), %rax
+	movq	-8(%rbp), %rdx
+	movq	%rdx, (%rax)
+	nop
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE8:
+	.size	swapMinHeapNode, .-swapMinHeapNode
+	.globl	minHeapify
+	.type	minHeapify, @function
+minHeapify:
+.LFB9:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -24(%rbp)
+	movl	%esi, -28(%rbp)
+	movl	-28(%rbp), %eax
+	movl	%eax, -12(%rbp)
+	movl	-28(%rbp), %eax
+	addl	%eax, %eax
+	addl	$1, %eax
+	movl	%eax, -8(%rbp)
+	movl	-28(%rbp), %eax
+	addl	$1, %eax
+	addl	%eax, %eax
+	movl	%eax, -4(%rbp)
+	movq	-24(%rbp), %rax
+	movl	(%rax), %edx
+	movl	-8(%rbp), %eax
+	cmpl	%eax, %edx
+	jbe	.L7
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-8(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rdx, %rax
+	movq	(%rax), %rax
+	movl	4(%rax), %edx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rcx
+	movl	-12(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rcx, %rax
+	movq	(%rax), %rax
+	movl	4(%rax), %eax
+	cmpl	%eax, %edx
+	jnb	.L7
+	movl	-8(%rbp), %eax
+	movl	%eax, -12(%rbp)
+.L7:
+	movq	-24(%rbp), %rax
+	movl	(%rax), %edx
+	movl	-4(%rbp), %eax
+	cmpl	%eax, %edx
+	jbe	.L8
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-4(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rdx, %rax
+	movq	(%rax), %rax
+	movl	4(%rax), %edx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rcx
+	movl	-12(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rcx, %rax
+	movq	(%rax), %rax
+	movl	4(%rax), %eax
+	cmpl	%eax, %edx
+	jnb	.L8
+	movl	-4(%rbp), %eax
+	movl	%eax, -12(%rbp)
+.L8:
+	movl	-12(%rbp), %eax
+	cmpl	-28(%rbp), %eax
+	je	.L10
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-28(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rax, %rdx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rcx
+	movl	-12(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rcx, %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	call	swapMinHeapNode
+	movl	-12(%rbp), %edx
+	movq	-24(%rbp), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	call	minHeapify
+.L10:
+	nop
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE9:
+	.size	minHeapify, .-minHeapify
+	.globl	isSizeOne
+	.type	isSizeOne, @function
+isSizeOne:
+.LFB10:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movl	(%rax), %eax
+	cmpl	$1, %eax
+	sete	%al
+	movzbl	%al, %eax
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE10:
+	.size	isSizeOne, .-isSizeOne
+	.globl	extractMin
+	.type	extractMin, @function
+extractMin:
+.LFB11:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -24(%rbp)
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rax
+	movq	(%rax), %rax
+	movq	%rax, -8(%rbp)
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movq	-24(%rbp), %rax
+	movl	(%rax), %eax
+	subl	$1, %eax
+	movl	%eax, %eax
+	salq	$3, %rax
+	addq	%rax, %rdx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rax
+	movq	(%rdx), %rdx
+	movq	%rdx, (%rax)
+	movq	-24(%rbp), %rax
+	movl	(%rax), %eax
+	leal	-1(%rax), %edx
+	movq	-24(%rbp), %rax
+	movl	%edx, (%rax)
+	movq	-24(%rbp), %rax
+	movl	$0, %esi
+	movq	%rax, %rdi
+	call	minHeapify
+	movq	-8(%rbp), %rax
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE11:
+	.size	extractMin, .-extractMin
+	.globl	insertMinHeap
+	.type	insertMinHeap, @function
+insertMinHeap:
+.LFB12:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -24(%rbp)
+	movq	%rsi, -32(%rbp)
+	movq	-24(%rbp), %rax
+	movl	(%rax), %eax
+	leal	1(%rax), %edx
+	movq	-24(%rbp), %rax
+	movl	%edx, (%rax)
+	movq	-24(%rbp), %rax
+	movl	(%rax), %eax
+	subl	$1, %eax
+	movl	%eax, -4(%rbp)
+	jmp	.L16
+.L18:
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-4(%rbp), %eax
+	subl	$1, %eax
+	movl	%eax, %ecx
+	shrl	$31, %ecx
+	addl	%ecx, %eax
+	sarl	%eax
+	cltq
+	salq	$3, %rax
+	leaq	(%rdx,%rax), %rcx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-4(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rax, %rdx
+	movq	(%rcx), %rax
+	movq	%rax, (%rdx)
+	movl	-4(%rbp), %eax
+	subl	$1, %eax
+	movl	%eax, %edx
+	shrl	$31, %edx
+	addl	%edx, %eax
+	sarl	%eax
+	movl	%eax, -4(%rbp)
+.L16:
+	cmpl	$0, -4(%rbp)
+	je	.L17
+	movq	-32(%rbp), %rax
+	movl	4(%rax), %edx
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rcx
+	movl	-4(%rbp), %eax
+	subl	$1, %eax
+	movl	%eax, %esi
+	shrl	$31, %esi
+	addl	%esi, %eax
+	sarl	%eax
+	cltq
+	salq	$3, %rax
+	addq	%rcx, %rax
+	movq	(%rax), %rax
+	movl	4(%rax), %eax
+	cmpl	%eax, %edx
+	jb	.L18
+.L17:
+	movq	-24(%rbp), %rax
+	movq	8(%rax), %rdx
+	movl	-4(%rbp), %eax
+	cltq
+	salq	$3, %rax
+	addq	%rax, %rdx
+	movq	-32(%rbp), %rax
+	movq	%rax, (%rdx)
+	nop
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE12:
+	.size	insertMinHeap, .-insertMinHeap
+	.globl	buildMinHeap
+	.type	buildMinHeap, @function
+buildMinHeap:
+.LFB13:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -24(%rbp)
+	movq	-24(%rbp), %rax
+	movl	(%rax), %eax
+	subl	$1, %eax
+	movl	%eax, -4(%rbp)
+	movl	-4(%rbp), %eax
+	subl	$1, %eax
+	movl	%eax, %edx
+	shrl	$31, %edx
+	addl	%edx, %eax
+	sarl	%eax
+	movl	%eax, -8(%rbp)
+	jmp	.L20
+.L21:
+	movl	-8(%rbp), %edx
+	movq	-24(%rbp), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	call	minHeapify
+	subl	$1, -8(%rbp)
+.L20:
+	cmpl	$0, -8(%rbp)
+	jns	.L21
+	nop
+	nop
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE13:
+	.size	buildMinHeap, .-buildMinHeap
+	.section	.rodata
+.LC0:
+	.string	"%d"
+	.text
+	.globl	printArr
+	.type	printArr, @function
+printArr:
+.LFB14:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -24(%rbp)
+	movl	%esi, -28(%rbp)
+	movl	$0, -4(%rbp)
+	jmp	.L23
+.L24:
+	movl	-4(%rbp), %eax
+	cltq
+	leaq	0(,%rax,4), %rdx
+	movq	-24(%rbp), %rax
+	addq	%rdx, %rax
+	movl	(%rax), %eax
+	movl	%eax, %esi
+	leaq	.LC0(%rip), %rax
+	movq	%rax, %rdi
+	movl	$0, %eax
+	call	printf@PLT
+	addl	$1, -4(%rbp)
+.L23:
+	movl	-4(%rbp), %eax
+	cmpl	-28(%rbp), %eax
+	jl	.L24
+	movl	$10, %edi
+	call	putchar@PLT
+	nop
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE14:
+	.size	printArr, .-printArr
+	.globl	isLeaf
+	.type	isLeaf, @function
+isLeaf:
+.LFB15:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	movq	%rdi, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	testq	%rax, %rax
+	jne	.L26
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	testq	%rax, %rax
+	jne	.L26
+	movl	$1, %eax
+	jmp	.L28
+.L26:
+	movl	$0, %eax
+.L28:
+	popq	%rbp
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE15:
+	.size	isLeaf, .-isLeaf
+	.globl	createAndBuildMinHeap
+	.type	createAndBuildMinHeap, @function
+createAndBuildMinHeap:
+.LFB16:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	pushq	%rbx
+	subq	$56, %rsp
+	.cfi_offset 3, -24
+	movq	%rdi, -40(%rbp)
+	movq	%rsi, -48(%rbp)
+	movl	%edx, -52(%rbp)
+	movl	-52(%rbp), %eax
+	movl	%eax, %edi
+	call	createMinHeap
+	movq	%rax, -24(%rbp)
+	movl	$0, -28(%rbp)
+	jmp	.L30
+.L31:
+	movl	-28(%rbp), %eax
+	cltq
+	leaq	0(,%rax,4), %rdx
+	movq	-48(%rbp), %rax
+	addq	%rdx, %rax
+	movl	(%rax), %eax
+	movl	%eax, %ecx
+	movl	-28(%rbp), %eax
+	movslq	%eax, %rdx
+	movq	-40(%rbp), %rax
+	addq	%rdx, %rax
+	movzbl	(%rax), %eax
+	movsbl	%al, %eax
+	movq	-24(%rbp), %rdx
+	movq	8(%rdx), %rsi
+	movl	-28(%rbp), %edx
+	movslq	%edx, %rdx
+	salq	$3, %rdx
+	leaq	(%rsi,%rdx), %rbx
+	movl	%ecx, %esi
+	movl	%eax, %edi
+	call	newNode
+	movq	%rax, (%rbx)
+	addl	$1, -28(%rbp)
+.L30:
+	movl	-28(%rbp), %eax
+	cmpl	-52(%rbp), %eax
+	jl	.L31
+	movl	-52(%rbp), %edx
+	movq	-24(%rbp), %rax
+	movl	%edx, (%rax)
+	movq	-24(%rbp), %rax
+	movq	%rax, %rdi
+	call	buildMinHeap
+	movq	-24(%rbp), %rax
+	movq	-8(%rbp), %rbx
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE16:
+	.size	createAndBuildMinHeap, .-createAndBuildMinHeap
+	.globl	buildHuffmanTree
+	.type	buildHuffmanTree, @function
+buildHuffmanTree:
+.LFB17:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$64, %rsp
+	movq	%rdi, -40(%rbp)
+	movq	%rsi, -48(%rbp)
+	movl	%edx, -52(%rbp)
+	movl	-52(%rbp), %edx
+	movq	-48(%rbp), %rcx
+	movq	-40(%rbp), %rax
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	createAndBuildMinHeap
+	movq	%rax, -32(%rbp)
+	jmp	.L34
+.L35:
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	extractMin
+	movq	%rax, -24(%rbp)
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	extractMin
+	movq	%rax, -16(%rbp)
+	movq	-24(%rbp), %rax
+	movl	4(%rax), %edx
+	movq	-16(%rbp), %rax
+	movl	4(%rax), %eax
+	addl	%edx, %eax
+	movl	%eax, %esi
+	movl	$36, %edi
+	call	newNode
+	movq	%rax, -8(%rbp)
+	movq	-8(%rbp), %rax
+	movq	-24(%rbp), %rdx
+	movq	%rdx, 8(%rax)
+	movq	-8(%rbp), %rax
+	movq	-16(%rbp), %rdx
+	movq	%rdx, 16(%rax)
+	movq	-8(%rbp), %rdx
+	movq	-32(%rbp), %rax
+	movq	%rdx, %rsi
+	movq	%rax, %rdi
+	call	insertMinHeap
+.L34:
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	isSizeOne
+	testl	%eax, %eax
+	je	.L35
+	movq	-32(%rbp), %rax
+	movq	%rax, %rdi
+	call	extractMin
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE17:
+	.size	buildHuffmanTree, .-buildHuffmanTree
+	.section	.rodata
+.LC1:
+	.string	"%c: "
+	.text
+	.globl	printCodes
+	.type	printCodes, @function
+printCodes:
+.LFB18:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$32, %rsp
+	movq	%rdi, -8(%rbp)
+	movq	%rsi, -16(%rbp)
+	movl	%edx, -20(%rbp)
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	testq	%rax, %rax
+	je	.L38
+	movl	-20(%rbp), %eax
+	cltq
+	leaq	0(,%rax,4), %rdx
+	movq	-16(%rbp), %rax
+	addq	%rdx, %rax
+	movl	$0, (%rax)
+	movl	-20(%rbp), %eax
+	leal	1(%rax), %edx
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	movq	-16(%rbp), %rcx
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	printCodes
+.L38:
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	testq	%rax, %rax
+	je	.L39
+	movl	-20(%rbp), %eax
+	cltq
+	leaq	0(,%rax,4), %rdx
+	movq	-16(%rbp), %rax
+	addq	%rdx, %rax
+	movl	$1, (%rax)
+	movl	-20(%rbp), %eax
+	leal	1(%rax), %edx
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	movq	-16(%rbp), %rcx
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	printCodes
+.L39:
+	movq	-8(%rbp), %rax
+	movq	%rax, %rdi
+	call	isLeaf
+	testl	%eax, %eax
+	je	.L41
+	movq	-8(%rbp), %rax
+	movzbl	(%rax), %eax
+	movsbl	%al, %eax
+	movl	%eax, %esi
+	leaq	.LC1(%rip), %rax
+	movq	%rax, %rdi
+	movl	$0, %eax
+	call	printf@PLT
+	movl	-20(%rbp), %edx
+	movq	-16(%rbp), %rax
+	movl	%edx, %esi
+	movq	%rax, %rdi
+	call	printArr
+.L41:
+	nop
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE18:
+	.size	printCodes, .-printCodes
+	.globl	HuffmanCodes
+	.type	HuffmanCodes, @function
+HuffmanCodes:
+.LFB19:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$464, %rsp
+	movq	%rdi, -440(%rbp)
+	movq	%rsi, -448(%rbp)
+	movl	%edx, -452(%rbp)
+	movq	%fs:40, %rax
+	movq	%rax, -8(%rbp)
+	xorl	%eax, %eax
+	movl	-452(%rbp), %edx
+	movq	-448(%rbp), %rcx
+	movq	-440(%rbp), %rax
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	buildHuffmanTree
+	movq	%rax, -424(%rbp)
+	movl	$0, -428(%rbp)
+	movl	-428(%rbp), %edx
+	leaq	-416(%rbp), %rcx
+	movq	-424(%rbp), %rax
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	printCodes
+	nop
+	movq	-8(%rbp), %rax
+	subq	%fs:40, %rax
+	je	.L43
+	call	__stack_chk_fail@PLT
+.L43:
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE19:
+	.size	HuffmanCodes, .-HuffmanCodes
+	.globl	main
+	.type	main, @function
+main:
+.LFB20:
+	.cfi_startproc
+	endbr64
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset 6, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register 6
+	subq	$64, %rsp
+	movq	%fs:40, %rax
+	movq	%rax, -8(%rbp)
+	xorl	%eax, %eax
+	movl	$1684234849, -14(%rbp)
+	movw	$26213, -10(%rbp)
+	movl	$5, -48(%rbp)
+	movl	$9, -44(%rbp)
+	movl	$12, -40(%rbp)
+	movl	$13, -36(%rbp)
+	movl	$16, -32(%rbp)
+	movl	$45, -28(%rbp)
+	movl	$6, -52(%rbp)
+	movl	-52(%rbp), %edx
+	leaq	-48(%rbp), %rcx
+	leaq	-14(%rbp), %rax
+	movq	%rcx, %rsi
+	movq	%rax, %rdi
+	call	HuffmanCodes
+	movl	$0, %eax
+	movq	-8(%rbp), %rdx
+	subq	%fs:40, %rdx
+	je	.L46
+	call	__stack_chk_fail@PLT
+.L46:
+	leave
+	.cfi_def_cfa 7, 8
+	ret
+	.cfi_endproc
+.LFE20:
+	.size	main, .-main
+	.ident	"GCC: (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0"
+	.section	.note.GNU-stack,"",@progbits
+	.section	.note.gnu.property,"a"
+	.align 8
+	.long	1f - 0f
+	.long	4f - 1f
+	.long	5
+0:
+	.string	"GNU"
+1:
+	.align 8
+	.long	0xc0000002
+	.long	3f - 2f
+2:
+	.long	0x3
+3:
+	.align 8
+4:
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ sloccount huf4.s
+Have a non-directory at the top, so creating directory top_dir
+Adding /home/ian/huf4.s to top_dir
+Categorizing files.
+Finding a working MD5 command....
+Found a working MD5 command.
+Computing results.
+
+
+SLOC	Directory	SLOC-by-Language (Sorted)
+807     top_dir         asm=807
+
+
+Totals grouped by language (dominant language first):
+asm:            807 (100.00%)
+
+
+
+
+Total Physical Source Lines of Code (SLOC)                = 807
+Development Effort Estimate, Person-Years (Person-Months) = 0.16 (1.92)
+ (Basic COCOMO model, Person-Months = 2.4 * (KSLOC**1.05))
+Schedule Estimate, Years (Months)                         = 0.27 (3.20)
+ (Basic COCOMO model, Months = 2.5 * (person-months**0.38))
+Estimated Average Number of Developers (Effort/Schedule)  = 0.60
+Total Estimated Cost to Develop                           = $ 21,570
+ (average salary = $56,286/year, overhead = 2.40).
+SLOCCount, Copyright (C) 2001-2004 David A. Wheeler
+SLOCCount is Open Source Software/Free Software, licensed under the GNU GPL.
+SLOCCount comes with ABSOLUTELY NO WARRANTY, and you are welcome to
+redistribute it under certain conditions as specified by the GNU GPL license;
+see the documentation for details.
+Please credit this data as "generated using David A. Wheeler's 'SLOCCount'."
+ian@ian-HP-Convertible-x360-11-ab1XX:~$ 
+
+
